@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Language Generator | Majid Nashtai</title>
     <style>
-      :root {
-          --black: #0a0a0a;
+        :root {
+            --black: #0a0a0a;
             --dark: #1a1a1a;
             --light: #f8f9fa;
             --accent: #6c5ce7;
@@ -75,11 +75,28 @@
             user-select: none;
             transform-style: preserve-3d;
             width: max-content;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 20px;
         }
         
         .carousel-track.dragging {
             cursor: grabbing;
             scroll-snap-type: none;
+        }
+        
+        .carousel-track::-webkit-scrollbar {
+            height: 5px;
+        }
+        
+        .carousel-track::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .carousel-track::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
         }
         
         .tile {
@@ -179,56 +196,12 @@
             filter: blur(10px);
             transform: translateZ(-30px);
             transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 0.5;
         }
         
-        .tile:hover .shadow {
-            transform: translateZ(-30px) scale(0.9);
-            opacity: 0.7;
-        }
-        
-        /* Navigation Arrows */
-        .nav-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 50px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
-        }
-        
-        .nav-arrow:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        .arrow-left {
-            left: 1rem;
-        }
-        
-        .arrow-right {
-            right: 1rem;
-        }
-        
-        /* Responsive Adjustments */
         @media (max-width: 768px) {
             .header {
                 padding: 3rem 1rem 1rem;
-            }
-            
-            .nav-arrow {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
             }
             
             .carousel-track {
@@ -246,9 +219,6 @@
     </div>
     
     <div class="carousel-container">
-        <button class="nav-arrow arrow-left" onclick="scrollCarousel(-1)">←</button>
-        <button class="nav-arrow arrow-right" onclick="scrollCarousel(1)">→</button>
-        
         <div class="carousel-track">
             <div class="tile">
                 <div class="tile-content">
@@ -301,100 +271,99 @@
     </div>
 
     <script>
-        // DOM Elements
-        const track = document.querySelector('.carousel-track');
-        const tiles = document.querySelectorAll('.tile');
-        
-        // Carousel State
-        let isDragging = false,
-            startX,
-            scrollLeft,
-            velocity,
-            animationFrame;
-        
-        // Initialize carousel position
-        track.scrollLeft = track.offsetWidth / 2 - track.firstElementChild.offsetWidth / 2;
-        
-        // Mouse Drag Handlers
-        const dragStart = (e) => {
-            isDragging = true;
-            track.classList.add('dragging');
-            startX = e.pageX || e.touches[0].pageX;
-            scrollLeft = track.scrollLeft;
-            cancelAnimationFrame(animationFrame);
-        };
-        
-        const dragging = (e) => {
-            if(!isDragging) return;
-            e.preventDefault();
-            const x = e.pageX || e.touches[0].pageX;
-            const walk = (x - startX) * 2;
-            const prevScroll = track.scrollLeft;
-            track.scrollLeft = scrollLeft - walk;
-            velocity = track.scrollLeft - prevScroll;
-        };
-        
-        const dragStop = () => {
-            if(!isDragging) return;
-            isDragging = false;
-            track.classList.remove('dragging');
-            applyMomentum();
-        };
-        
-        // Momentum Physics
-        const applyMomentum = () => {
-            const friction = 0.92;
-            velocity *= friction;
+        document.addEventListener('DOMContentLoaded', () => {
+            const track = document.querySelector('.carousel-track');
+            const tiles = document.querySelectorAll('.tile');
             
-            if(Math.abs(velocity) > 0.5) {
-                track.scrollLeft += velocity;
-                animationFrame = requestAnimationFrame(applyMomentum);
-            }
-        };
-        
-        // Arrow Navigation
-        const scrollCarousel = (direction) => {
-            const tileWidth = tiles[0].offsetWidth + 32; // Include gap
-            track.scrollBy({
-                left: direction * tileWidth,
-                behavior: 'smooth'
-            });
-        };
-        
-        // 3D Hover Effects
-        tiles.forEach(tile => {
-            tile.addEventListener('mousemove', (e) => {
-                const rect = tile.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const angleX = (y - centerY) / 20;
-                const angleY = (centerX - x) / 20;
-                
-                tile.style.transform = `translateY(-20px) rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+            // Initialize
+            let isDragging = false,
+                startX,
+                scrollLeft,
+                velocity,
+                animationFrame;
+            
+            // Mouse events
+            track.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                track.classList.add('dragging');
+                startX = e.pageX - track.offsetLeft;
+                scrollLeft = track.scrollLeft;
+                cancelAnimationFrame(animationFrame);
             });
             
-            tile.addEventListener('mouseleave', () => {
-                tile.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
-            });
-        });
-        
-        // Event Listeners
-        track.addEventListener('mousedown', dragStart);
-        track.addEventListener('touchstart', dragStart, { passive: false });
-        
-        document.addEventListener('mousemove', dragging);
-        document.addEventListener('touchmove', dragging, { passive: false });
-        
-        document.addEventListener('mouseup', dragStop);
-        document.addEventListener('touchend', dragStop);
-        
-        // Prevent image drag
-        document.addEventListener('dragstart', (e) => {
-            if(e.target.tagName === 'IMG') {
+            track.addEventListener('mousemove', (e) => {
+                if(!isDragging) return;
                 e.preventDefault();
+                const x = e.pageX - track.offsetLeft;
+                const walk = (x - startX) * 3;
+                const prevScrollLeft = track.scrollLeft;
+                track.scrollLeft = scrollLeft - walk;
+                velocity = track.scrollLeft - prevScrollLeft;
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if(!isDragging) return;
+                isDragging = false;
+                track.classList.remove('dragging');
+                applyMomentum();
+            });
+            
+            // Touch events
+            track.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                track.classList.add('dragging');
+                startX = e.touches[0].pageX - track.offsetLeft;
+                scrollLeft = track.scrollLeft;
+                cancelAnimationFrame(animationFrame);
+            });
+            
+            track.addEventListener('touchmove', (e) => {
+                if(!isDragging) return;
+                const x = e.touches[0].pageX - track.offsetLeft;
+                const walk = (x - startX) * 3;
+                const prevScrollLeft = track.scrollLeft;
+                track.scrollLeft = scrollLeft - walk;
+                velocity = track.scrollLeft - prevScrollLeft;
+            });
+            
+            document.addEventListener('touchend', () => {
+                if(!isDragging) return;
+                isDragging = false;
+                track.classList.remove('dragging');
+                applyMomentum();
+            });
+            
+            // Momentum physics
+            function applyMomentum() {
+                const friction = 0.95;
+                velocity *= friction;
+                
+                if(Math.abs(velocity) > 0.5) {
+                    track.scrollLeft += velocity;
+                    animationFrame = requestAnimationFrame(applyMomentum);
+                }
             }
+            
+            // 3D hover effects
+            tiles.forEach(tile => {
+                tile.addEventListener('mousemove', (e) => {
+                    const rect = tile.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const angleX = (y - centerY) / 15;
+                    const angleY = (centerX - x) / 15;
+                    
+                    tile.style.transform = `translateY(-15px) rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+                    tile.querySelector('.shadow').style.opacity = '0.8';
+                });
+                
+                tile.addEventListener('mouseleave', () => {
+                    tile.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+                    tile.querySelector('.shadow').style.opacity = '0.5';
+                });
+            });
         });
     </script>
 </body>
